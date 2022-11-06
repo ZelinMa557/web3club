@@ -1,4 +1,4 @@
-import {web3, myERC20Contract, StudentSocietyContract} from '../utils/contracts'
+import {web3, myERC20Contract, myERC721Contract,StudentSocietyContract} from '../utils/contracts'
 import { NavLink, Route } from 'react-router-dom';
 import {useEffect, useState} from 'react';
 import {Button, Image} from 'antd';
@@ -114,6 +114,21 @@ const HomePage = () => {
         }
     }
 
+    const getNft = async () => {
+        if (StudentSocietyContract && myERC721Contract) {
+            try {
+                let nft = await myERC721Contract.methods.getNft(account).call({
+                    from: account
+                })
+                return nft
+            } catch (error: any) {
+                alert(error.message)
+            }
+        } else {
+            alert("contract not exist.")
+        }
+    }
+
     async function vote (index:number, approve:boolean) {
         if (StudentSocietyContract && myERC20Contract) {
             try {
@@ -126,7 +141,7 @@ const HomePage = () => {
                 })
                 alert("投票成功！")
             } catch (error: any) {
-                alert(error.message)
+                alert("只允许投票一次")
             }
         } else {
             alert("contract not exist.")
@@ -138,7 +153,7 @@ const HomePage = () => {
         if (StudentSocietyContract && myERC20Contract) {
             await StudentSocietyContract.methods.commit(index).send({
                from: account,
-               gas: 100000
+               gas: 6721975
             })
         } else {
             alert("contract not exist.")
@@ -210,6 +225,45 @@ const HomePage = () => {
         tryCommit()
     }
 
+    async function getMyProposal() {
+        if (account === '') {
+            alert("请先连接钱包！")
+        }
+        var NFT
+        try {
+            let nft = await getNft()
+            if (nft == '' || nft == undefined || nft == null) {
+                NFT = <p>三次提案通过，即可获得纪念品！</p>
+            } else {
+                NFT = <Image src={require("../asset/" + nft + '.png')} className='nft'></Image>
+            }
+            console.log("NFT", nft)
+        } catch (error) {
+            alert(error)
+            return
+        }
+
+        try {
+            let myProposals = await StudentSocietyContract.methods.getMyProposal().call({
+                from: account
+            })
+            proposalList = []
+            commitTasks = []
+            for (let p of myProposals) {
+                let proposal = await getProposal(p)
+                commitTasks.push(proposal)
+                proposalList.push(Proposal(proposal))
+                console.log("get proposal:", proposal)
+            }
+        } catch (error) {
+            alert(error)
+            return
+        }
+        ReactDOM.render(NFT, document.getElementById('nft'))
+        ReactDOM.render(proposalList, document.getElementById('pros'))
+        tryCommit()      
+    }
+
     const Sleep = (ms:number)=> {
         return new Promise(resolve=>setTimeout(resolve, ms))
     }
@@ -222,12 +276,12 @@ const HomePage = () => {
             let now_time:number = Math.floor(now.getTime()/60000)*60000
             for(let p of commitTasks) {
                 console.log(p);
-                if(Number((Number(p.startTime) + Number(p.duration))) < Number(now_time) && p.commited === false) {
+                if(Number((Number(p.startTime) + Number(p.duration))) <= Number(now_time) && p.commited === false) {
                     commit(p.index)
                     console.log("commit", p);
                 }
                 else if(p.commited === false) {
-                    console.log(Number((Number(p.startTime) + Number(p.duration))), Number(now_time))
+                    console.log("still looping", Number((Number(p.startTime) + Number(p.duration))), Number(now_time))
                     needLoop = true
                 }
             }
@@ -299,7 +353,9 @@ const HomePage = () => {
             <div>
                 <NavLink to='/newproposal'>点我发起新提案</NavLink><br></br>
                 <Button onClick={getAllProposal} className='allProposal'>查看所有提案</Button>
+                <Button onClick={getMyProposal} className='allProposal'>查看我的提案</Button>
             </div>
+            <div id='nft'></div>
             <div id='pros'></div>
         </div>
     )

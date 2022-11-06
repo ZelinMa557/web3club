@@ -46,3 +46,11 @@
     background-color: red;
     margin: 3%;
 }
+
+.nft
+{
+    width: 100px;
+    height: 100px;
+    margin-bottom: 2%;
+    text-align: center;
+}

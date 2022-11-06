@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 // You can use this dependency directly because it has been installed already
 import "hardhat/console.sol";
 import "./MyERC20.sol";
+import "./MyERC721.sol";
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
@@ -31,14 +32,17 @@ contract StudentSocietyDAO {
     }
 
     MyERC20 public studentERC20;
+    MyERC721 public studentERC721;
     mapping(uint32 => Proposal) Proposals; // A map from proposal index to proposal
     mapping (uint32 => mapping (address => bool)) voteRecords;
     mapping (address => uint32[]) launchRecords;
+    mapping (address => uint32) approvedCount;
     uint32 proposalCount;
 
     constructor() {
         // maybe you need a constructor
         studentERC20 = new MyERC20("name", "symbol");
+        studentERC721 = new MyERC721();
         proposalCount = 0;
     }
 
@@ -60,7 +64,12 @@ contract StudentSocietyDAO {
         require(Proposals[index].commited == false);
         Proposals[index].commited = true;
         if (Proposals[index].approveCount > Proposals[index].disapproveCount) {
-            studentERC20.transfer(Proposals[index].proposer, BONUS);
+            address proposer = Proposals[index].proposer;
+            studentERC20.transfer(proposer, BONUS);
+            approvedCount[proposer]++;
+            if (approvedCount[proposer] == 3) {
+                studentERC721.mintNFT(proposer);
+            }
         }
     }
 
