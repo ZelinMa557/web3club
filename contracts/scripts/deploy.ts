@@ -4,8 +4,9 @@ async function main() {
   const StudentSocietyDAO = await ethers.getContractFactory("StudentSocietyDAO");
   const studentSocietyDAO = await StudentSocietyDAO.deploy();
   await studentSocietyDAO.deployed();
-
+  const erc20 = await studentSocietyDAO.studentERC20()
   console.log(`StudentSocietyDAO deployed to ${studentSocietyDAO.address}`);
+  console.log(`erc20 contract has been deployed successfully in ${erc20}`)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
